@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { AUTH_ENDPOINTS, setAuthToken } from '../utils/api';
 
 const AuthContext = createContext();
 
@@ -8,14 +9,17 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token') || null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);  // Set axios default headers
+  const [error, setError] = useState(null);
+
+  // Set axios default headers
   useEffect(() => {
     if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      setAuthToken(token);
     } else {
-      delete axios.defaults.headers.common['Authorization'];
+      setAuthToken(null);
     }
   }, [token]);
+
   // Load user if token exists
   useEffect(() => {
     const loadUser = async () => {
@@ -26,10 +30,9 @@ export const AuthProvider = ({ children }) => {
       
       try {
         console.log('Verifying token by loading user data...');
-        const apiUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/auth/me`;
-        console.log('Making request to:', apiUrl);
+        console.log('Making request to:', AUTH_ENDPOINTS.ME);
         
-        const res = await axios.get(apiUrl, {
+        const res = await axios.get(AUTH_ENDPOINTS.ME, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -51,13 +54,15 @@ export const AuthProvider = ({ children }) => {
     };
 
     loadUser();
-  }, [token]);  // Register user
+  }, [token]);
+
+  // Register user
   const register = async (userData) => {
     try {
       setLoading(true);
-      console.log('Sending registration request to API:', `${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/auth/register`);
+      console.log('Sending registration request to API:', AUTH_ENDPOINTS.REGISTER);
       
-      const res = await axios.post(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/auth/register`, userData);
+      const res = await axios.post(AUTH_ENDPOINTS.REGISTER, userData);
       
       console.log('Registration API response:', res.data);
       
@@ -84,17 +89,18 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
       return { success: false, error: err.response?.data?.message || 'Registration failed' };
     }
-  };  // Login user
+  };
+
+  // Login user
   const login = async (email, password) => {
     try {
       setLoading(true);
       setError(null);
       
       console.log('Attempting login with email:', email);
-      const apiUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/auth/login`;
-      console.log('Making login request to:', apiUrl);
+      console.log('Making login request to:', AUTH_ENDPOINTS.LOGIN);
       
-      const res = await axios.post(apiUrl, { email, password });
+      const res = await axios.post(AUTH_ENDPOINTS.LOGIN, { email, password });
       
       console.log('Login successful');
       const { token: newToken, user: userInfo } = res.data;
@@ -120,7 +126,7 @@ export const AuthProvider = ({ children }) => {
   // Logout user
   const logout = async () => {
     try {
-      await axios.get(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/auth/logout`);
+      await axios.get(AUTH_ENDPOINTS.LOGOUT);
     } catch (err) {
       console.error('Logout error:', err);
     } finally {
@@ -153,4 +159,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export default AuthContext; 
+export default AuthContext;

@@ -1,6 +1,7 @@
-import { createContext, useState, useEffect, useContext } from 'react';
+import { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import axios from 'axios';
 import AuthContext from './AuthContext';
+import { VIDEO_ENDPOINTS } from '../utils/api';
 
 const VideoContext = createContext();
 
@@ -11,6 +12,7 @@ export const VideoProvider = ({ children }) => {
   const [error, setError] = useState(null);
   
   const { isAuthenticated } = useContext(AuthContext);
+
   // Load videos when authenticated
   useEffect(() => {
     if (isAuthenticated) {
@@ -21,7 +23,9 @@ export const VideoProvider = ({ children }) => {
     }
     // We intentionally exclude getVideos from dependencies to avoid loops
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated]);  // Get all videos  
+  }, [isAuthenticated]);
+
+  // Get all videos  
   const getVideos = async () => {
     try {
       console.log('Fetching videos...');
@@ -40,29 +44,26 @@ export const VideoProvider = ({ children }) => {
       }
         
       // Explicitly set the Authorization header for this specific request
-      const apiUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/videos`;
-      console.log('Making request to:', apiUrl);
+      console.log('Making request to:', VIDEO_ENDPOINTS.LIST);
       
-      const res = await axios.get(apiUrl, {
+      const res = await axios.get(VIDEO_ENDPOINTS.LIST, {
         headers: {
           'Authorization': `Bearer ${currentToken}`
         }
       });
       
-      console.log('Video API response:', res.data);
-      setVideos(res.data.data);
+      console.log('Videos fetched successfully:', res.data);
+      setVideos(res.data);
       setLoading(false);
     } catch (err) {
       console.error('Error fetching videos:', err);
-      if (err.response) {
-        console.error('Error response:', err.response.status, err.response.data);
-      }
-      setError(err.response?.data?.message || 'Error loading videos');
+      setError(err.response?.data?.message || 'Failed to fetch videos');
       setLoading(false);
     }
   };
+  
   // Get single video
-  const getVideo = async (id) => {
+  const getVideo = useCallback(async (id) => {
     try {
       // Check if we already have this video loaded 
       if (currentVideo && currentVideo._id === id) {
@@ -70,10 +71,10 @@ export const VideoProvider = ({ children }) => {
         return currentVideo;
       }
       
+      console.log('Fetching single video with ID:', id);
       setLoading(true);
       setError(null);
       
-      // Get the current token
       const currentToken = localStorage.getItem('token');
       if (!currentToken) {
         setError('Authentication token missing. Please log in again.');
@@ -81,78 +82,94 @@ export const VideoProvider = ({ children }) => {
         return null;
       }
       
-      // Explicitly set the Authorization header for this specific request
-      const apiUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/videos/${id}`;
-      console.log('Fetching video details from:', apiUrl);
+      console.log('Making request to:', VIDEO_ENDPOINTS.DETAIL(id));
       
-      const res = await axios.get(apiUrl, {
+      const res = await axios.get(VIDEO_ENDPOINTS.DETAIL(id), {
         headers: {
           'Authorization': `Bearer ${currentToken}`
         }
       });
       
-      setCurrentVideo(res.data.data);
+      console.log('Video fetched successfully:', res.data);
+      setCurrentVideo(res.data);
       setLoading(false);
-      return res.data.data;
+      return res.data;
     } catch (err) {
-      setError(err.response?.data?.message || 'Error loading video');
+      console.error('Error fetching video:', err);
+      setError(err.response?.data?.message || 'Failed to fetch video');
       setLoading(false);
       return null;
     }
-  };
-
-  // Add video (admin only)
+  }, [currentVideo]);
+  
+  // Add video
   const addVideo = async (videoData) => {
     try {
       setLoading(true);
-      const res = await axios.post(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/videos`, videoData);
-      setVideos([res.data.data, ...videos]);
+      setError(null);
+      
+      const res = await axios.post(VIDEO_ENDPOINTS.CREATE, videoData);
+      
+      console.log('Video added successfully');
+      setVideos([...videos, res.data]);
       setLoading(false);
-      return { success: true, data: res.data.data };
+      return res.data;
     } catch (err) {
-      setError(err.response?.data?.message || 'Error adding video');
+      console.error('Error adding video:', err);
+      setError(err.response?.data?.message || 'Failed to add video');
       setLoading(false);
-      return { success: false, error: err.response?.data?.message || 'Error adding video' };
+      throw err;
     }
   };
-
-  // Update video (admin only)
+    // Update video
   const updateVideo = async (id, videoData) => {
     try {
       setLoading(true);
-      const res = await axios.put(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/videos/${id}`, videoData);
-      setVideos(videos.map(video => video._id === id ? res.data.data : video));
-      setCurrentVideo(res.data.data);
+      setError(null);
+      
+      const res = await axios.put(VIDEO_ENDPOINTS.UPDATE(id), videoData);
+      console.log('Video updated successfully');
+      setVideos(videos.map(video => video._id === id ? res.data : video));
+      if (currentVideo && currentVideo._id === id) {
+        setCurrentVideo(res.data);
+      }
       setLoading(false);
-      return { success: true, data: res.data.data };
+      return res.data;
     } catch (err) {
-      setError(err.response?.data?.message || 'Error updating video');
+      console.error('Error updating video:', err);
+      setError(err.response?.data?.message || 'Failed to update video');
       setLoading(false);
-      return { success: false, error: err.response?.data?.message || 'Error updating video' };
+      throw err;
     }
   };
-
-  // Delete video (admin only)
+  
+  // Delete video
   const deleteVideo = async (id) => {
     try {
       setLoading(true);
-      await axios.delete(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/videos/${id}`);
+      setError(null);
+      
+      await axios.delete(VIDEO_ENDPOINTS.DELETE(id));
+      
+      console.log('Video deleted successfully');
       setVideos(videos.filter(video => video._id !== id));
       if (currentVideo && currentVideo._id === id) {
         setCurrentVideo(null);
       }
       setLoading(false);
-      return { success: true };
     } catch (err) {
-      setError(err.response?.data?.message || 'Error deleting video');
+      console.error('Error deleting video:', err);
+      setError(err.response?.data?.message || 'Failed to delete video');
       setLoading(false);
-      return { success: false, error: err.response?.data?.message || 'Error deleting video' };
+      throw err;
     }
   };
-
+  
   // Clear errors
-  const clearErrors = () => setError(null);
-
+  const clearErrors = () => {
+    setError(null);
+  };
+  
   return (
     <VideoContext.Provider
       value={{
@@ -165,8 +182,7 @@ export const VideoProvider = ({ children }) => {
         addVideo,
         updateVideo,
         deleteVideo,
-        clearErrors,
-        setCurrentVideo
+        clearErrors
       }}
     >
       {children}
