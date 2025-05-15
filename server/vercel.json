@@ -9,25 +9,7 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "index.js",
-      "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+      "dest": "/index.js"
     }
-  ],
-  "env": {
-    "JWT_SECRET": "@jwt_secret",
-    "JWT_EXPIRE": "@jwt_expire",
-    "MONGODB_URI": "@mongodb_uri"
-  },
-  "cors": {
-    "origin": [
-      "https://kuppisite-client.vercel.app",
-      "http://localhost:3000"
-    ],
-    "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    "allowHeaders": [
-      "Content-Type", 
-      "Authorization", 
-      "X-Requested-With"
-    ]
-  }
+  ]
 }
