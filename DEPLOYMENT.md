@@ -8,6 +8,10 @@ This guide provides instructions for deploying both the client and server compon
 2. [Vercel CLI](https://vercel.com/cli) installed (optional for local deployment)
 3. GitHub repository with your code
 
+## Important Security Notice
+
+**NEVER commit sensitive information like database credentials, API keys, or JWT secrets to your repository.** Instead, use environment variables in Vercel.
+
 ## Step 1: Deploy the Server
 
 ### Option 1: Deploy via Vercel Dashboard
