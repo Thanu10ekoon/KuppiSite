@@ -37,8 +37,5 @@
     {
       "src": "/(.*)",
       "dest": "/index.html"
-    }
-  ],  "env": {
-    "REACT_APP_SERVER_URL": "@react_app_server_url"
-  }
+    }  ]
 }
