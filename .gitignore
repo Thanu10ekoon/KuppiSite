@@ -23,3 +23,16 @@ yarn-error.log*
 
 # production build
 /client/build
+
+# backup files
+*.bak
+*.old
+*.new
+
+# test files
+server/test-*.js
+server/debug-*.js
+server/add-video.js
+server/create-admin.js
+server/fix-video.js
+server/list-videos.js
