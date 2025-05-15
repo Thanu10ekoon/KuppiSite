@@ -1,0 +1,143 @@
+import { createContext, useState, useEffect, useContext } from 'react';
+import axios from 'axios';
+import AuthContext from './AuthContext';
+
+const VideoContext = createContext();
+
+export const VideoProvider = ({ children }) => {
+  const [videos, setVideos] = useState([]);
+  const [currentVideo, setCurrentVideo] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  const { isAuthenticated } = useContext(AuthContext);
+
+  // Load videos when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      getVideos();
+    } else {
+      setVideos([]);
+      setCurrentVideo(null);
+    }
+  }, [isAuthenticated]);
+  
+  // Get all videos  
+  const getVideos = async () => {
+    try {
+      // Don't refresh if already loading
+      if (loading) return;
+      
+      setLoading(true);
+      
+      // Explicitly set the Authorization header for this specific request
+      const res = await axios.get(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/videos`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      setVideos(res.data.data);
+      setLoading(false);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error loading videos');
+      setLoading(false);
+    }
+  };
+
+  // Get single video
+  const getVideo = async (id) => {
+    try {
+      setLoading(true);
+      
+      // Explicitly set the Authorization header for this specific request
+      const res = await axios.get(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/videos/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      setCurrentVideo(res.data.data);
+      setLoading(false);
+      return res.data.data;
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error loading video');
+      setLoading(false);
+      return null;
+    }
+  };
+
+  // Add video (admin only)
+  const addVideo = async (videoData) => {
+    try {
+      setLoading(true);
+      const res = await axios.post(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/videos`, videoData);
+      setVideos([res.data.data, ...videos]);
+      setLoading(false);
+      return { success: true, data: res.data.data };
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error adding video');
+      setLoading(false);
+      return { success: false, error: err.response?.data?.message || 'Error adding video' };
+    }
+  };
+
+  // Update video (admin only)
+  const updateVideo = async (id, videoData) => {
+    try {
+      setLoading(true);
+      const res = await axios.put(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/videos/${id}`, videoData);
+      setVideos(videos.map(video => video._id === id ? res.data.data : video));
+      setCurrentVideo(res.data.data);
+      setLoading(false);
+      return { success: true, data: res.data.data };
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error updating video');
+      setLoading(false);
+      return { success: false, error: err.response?.data?.message || 'Error updating video' };
+    }
+  };
+
+  // Delete video (admin only)
+  const deleteVideo = async (id) => {
+    try {
+      setLoading(true);
+      await axios.delete(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/videos/${id}`);
+      setVideos(videos.filter(video => video._id !== id));
+      if (currentVideo && currentVideo._id === id) {
+        setCurrentVideo(null);
+      }
+      setLoading(false);
+      return { success: true };
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error deleting video');
+      setLoading(false);
+      return { success: false, error: err.response?.data?.message || 'Error deleting video' };
+    }
+  };
+
+  // Clear errors
+  const clearErrors = () => setError(null);
+
+  return (
+    <VideoContext.Provider
+      value={{
+        videos,
+        currentVideo,
+        loading,
+        error,
+        getVideos,
+        getVideo,
+        addVideo,
+        updateVideo,
+        deleteVideo,
+        clearErrors,
+        setCurrentVideo
+      }}
+    >
+      {children}
+    </VideoContext.Provider>
+  );
+};
+
+export default VideoContext;

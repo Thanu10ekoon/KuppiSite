@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "binary-extensions": "^3.1.0",
+    "chokidar": "^4.0.3",
+    "is-binary-path": "^3.0.0"
+  }
+}
