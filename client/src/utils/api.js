@@ -34,6 +34,3 @@ export const setAuthToken = (token) => {
     delete axios.defaults.headers.common['Authorization'];
   }
 };
-
-// Import axios
-import axios from 'axios';
