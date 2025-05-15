@@ -2,6 +2,13 @@
 
 This guide will walk you through deploying your KuppiSite application on Vercel, with the server and client as separate projects.
 
+## Important Note for Server Deployment
+
+For the server to work correctly on Vercel, we've made these key changes:
+1. Updated `server/index.js` to export the Express app for serverless deployment
+2. Simplified `server/vercel.json` for proper routing
+3. Added environment variable handling
+
 ## Deploying the Server
 
 1. **Login to Vercel**:
@@ -11,6 +18,7 @@ This guide will walk you through deploying your KuppiSite application on Vercel,
 2. **Create a New Project**:
    - Click "Add New" > "Project"
    - Import your GitHub repository
+   - **Important**: Select the `deployment` branch
 
 3. **Configure the Project**:
    - **Root Directory**: `/server`
