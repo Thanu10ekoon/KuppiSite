@@ -60,7 +60,7 @@ vercel
    - Build command: `npm run build`
    - Output directory: `build`
 5. Add environment variables:
-   - `REACT_APP_API_URL`: The API URL from Step 1, e.g., `https://kuppisite-server.vercel.app/api`
+   - `REACT_APP_SERVER_URL`: The API URL from Step 1, e.g., `https://kuppisite-server.vercel.app/api`
 6. Click "Deploy"
 
 ### Option 2: Deploy via Vercel CLI
@@ -97,7 +97,7 @@ After deploying the client, you need to update the server's CORS settings:
 ## Troubleshooting
 
 1. **CORS Issues**: Ensure the server's `CORS_ORIGIN` contains the exact domain of your client app
-2. **API Connection Issues**: Verify that `REACT_APP_API_URL` points to the correct server API URL
+2. **API Connection Issues**: Verify that `REACT_APP_SERVER_URL` points to the correct server API URL
 3. **MongoDB Connection Issues**: Check that your MongoDB Atlas cluster allows connections from Vercel's IP addresses
 4. **Environment Variables**: Make sure all environment variables are correctly set in Vercel
 

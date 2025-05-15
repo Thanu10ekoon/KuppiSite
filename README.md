@@ -98,7 +98,7 @@ A full-stack web application where authenticated users can access private YouTub
 
 3. **Create a .env file in the client directory**:
    ```
-   REACT_APP_API_URL=http://localhost:5000/api
+   REACT_APP_SERVER_URL=http://localhost:5000/api
    ```
 
 4. **Start the development server**:

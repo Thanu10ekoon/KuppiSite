@@ -52,7 +52,7 @@ For the server to work correctly on Vercel, we've made these key changes:
 
 3. **Configure Environment Variables**:
    - Click "Environment Variables" and add:
-     - `REACT_APP_API_URL`: URL of your server deployment + `/api` (e.g., `https://kuppisite-server.vercel.app/api`)
+     - `REACT_APP_SERVER_URL`: URL of your server deployment + `/api` (e.g., `https://kuppisite-server.vercel.app/api`)
 
 4. **Deploy**:
    - Click "Deploy"

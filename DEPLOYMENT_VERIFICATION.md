@@ -1,6 +1,7 @@
 # Vercel Deployment Verification Guide
 
-After deploying both the server and client to Vercel, follow these steps to verify everything is working correctly.
+After dep2. **Check API URL in Client**:
+   - Verify that `REACT_APP_SERVER_URL` is set correctly in the clientying both the server and client to Vercel, follow these steps to verify everything is working correctly.
 
 ## 1. Server Verification
 
