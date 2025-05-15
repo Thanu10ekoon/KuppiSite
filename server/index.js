@@ -26,9 +26,23 @@ if (!process.env.JWT_EXPIRE) {
 // Create Express app
 const app = express();
 
+// Parse CORS origins from environment variable
+const corsOrigin = process.env.CORS_ORIGIN ? 
+  process.env.CORS_ORIGIN.split(',') : 
+  ['http://localhost:3000', 'https://kuppisite-client.vercel.app'];
+
 // CORS configuration
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || ['http://localhost:3000', 'https://kuppisite-client.vercel.app'],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, etc)
+    if (!origin) return callback(null, true);
+    
+    if (corsOrigin.indexOf(origin) !== -1 || corsOrigin.includes('*')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
