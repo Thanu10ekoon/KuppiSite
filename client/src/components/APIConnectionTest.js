@@ -16,11 +16,13 @@ const APIConnectionTest = () => {
     password: ''
   });
   const [isRunningTest, setIsRunningTest] = useState(false);
+
   // Add log entry with timestamp
   const addLog = (message, type = 'info') => {
     const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
     setLogs(prev => [...prev, { message, timestamp, type }]);
   };
+
   // Basic connectivity test
   const testBasicConnectivity = async () => {
     setIsRunningTest(true);
@@ -100,7 +102,9 @@ const APIConnectionTest = () => {
       ...testCredentials,
       [e.target.name]: e.target.value
     });
-  };  // Run basic test on mount
+  };
+  
+  // Run basic test on mount
   useEffect(() => {
     testBasicConnectivity();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -123,58 +127,63 @@ const APIConnectionTest = () => {
           >
             Test Basic Connectivity
           </button>
-          <button 
-            className="btn btn-secondary" 
-            onClick={() => setLogs([])}
-            disabled={isRunningTest}
-          >
-            Clear Logs
-          </button>
         </div>
       </div>
       
-      <div className="login-test-section border-top pt-3 mt-3">
-        <h4>Test Login Endpoint</h4>
-        <div className="row">
-          <div className="col-12 col-md-6">
-            <div className="mb-2">
-              <label htmlFor="testEmail" className="form-label">Test Email</label>
-              <input
-                type="email"
-                className="form-control"
-                id="testEmail"
-                name="email"
-                value={testCredentials.email}
-                onChange={handleCredentialsChange}
-              />
+      <div className="card mb-4">
+        <div className="card-header">
+          <h4 className="h5 mb-0">Test Login</h4>
+        </div>
+        <div className="card-body">
+          <div className="row">
+            <div className="col-md-6">
+              <div className="mb-3">
+                <label htmlFor="email" className="form-label">Email</label>
+                <input
+                  type="email"
+                  className="form-control"
+                  id="email"
+                  name="email"
+                  value={testCredentials.email}
+                  onChange={handleCredentialsChange}
+                  placeholder="test@example.com"
+                />
+              </div>
+              <div className="mb-3">
+                <label htmlFor="password" className="form-label">Password</label>
+                <input
+                  type="password"
+                  className="form-control"
+                  id="password"
+                  name="password"
+                  value={testCredentials.password}
+                  onChange={handleCredentialsChange}
+                  placeholder="Enter password"
+                />
+              </div>
+              <button 
+                className="btn btn-success" 
+                onClick={testLogin}
+                disabled={isRunningTest}
+              >
+                Test Login API
+              </button>
             </div>
-            <div className="mb-2">
-              <label htmlFor="testPassword" className="form-label">Test Password</label>
-              <input
-                type="password"
-                className="form-control"
-                id="testPassword"
-                name="password"
-                value={testCredentials.password}
-                onChange={handleCredentialsChange}
-              />
+            <div className="col-md-6">
+              <div className="alert alert-info">
+                Enter test credentials to try a real login request.
+                This helps diagnose if authentication is working correctly.
+              </div>
             </div>
-            <button 
-              className="btn btn-warning" 
-              onClick={testLogin}
-              disabled={isRunningTest}
-            >
-              Test Login
-            </button>
           </div>
         </div>
       </div>
       
-      <div className="logs mt-4">
+      <div className="logs">
         <h4>Test Logs</h4>
-        <div className="log-container border p-2 bg-light" style={{maxHeight: '400px', overflowY: 'auto'}}>
+        <div className="log-entries p-3 border rounded bg-light" style={{ maxHeight: '300px', overflowY: 'auto' }}>
           {logs.length === 0 ? (
-            <p className="text-muted">No logs yet</p>
+            <p className="text-muted">No logs yet. Run a test to see results here.</p>
           ) : (
             logs.map((log, index) => (
               <div key={index} className={`log-entry ${log.type}`}>
@@ -185,23 +194,6 @@ const APIConnectionTest = () => {
           )}
         </div>
       </div>
-      
-      <style jsx>{`
-        .log-entry {
-          padding: 3px 0;
-          border-bottom: 1px solid #f0f0f0;
-          font-family: monospace;
-          font-size: 0.9rem;
-        }
-        .timestamp {
-          color: #777;
-          margin-right: 8px;
-        }
-        .log-entry.info .message { color: #333; }
-        .log-entry.success .message { color: #198754; }
-        .log-entry.error .message { color: #dc3545; }
-        .log-entry.warning .message { color: #fd7e14; }
-      `}</style>
     </div>
   );
 };

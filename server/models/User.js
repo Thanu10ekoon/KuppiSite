@@ -60,4 +60,42 @@ UserSchema.methods.matchPassword = async function(enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-module.exports = mongoose.model('User', UserSchema); 
+// Static method to find user by email with retry logic for timeouts
+UserSchema.statics.findByEmailWithRetry = async function(email, includePassword = false, maxRetries = 3) {
+  let lastError;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const query = this.findOne({ email });
+      
+      if (includePassword) {
+        query.select('+password');
+      }
+      
+      const user = await query;
+      return user;
+    } catch (error) {
+      console.error(`Attempt ${attempt + 1}/${maxRetries} failed to find user:`, error.message);
+      lastError = error;
+      
+      // Only retry on timeout errors
+      if (!error.message.includes('timed out') && 
+          error.name !== 'MongooseServerSelectionError' &&
+          error.name !== 'MongoTimeoutError') {
+        throw error;
+      }
+      
+      // Wait before retrying with exponential backoff
+      if (attempt < maxRetries - 1) {
+        const delay = Math.pow(2, attempt) * 1000;
+        console.log(`Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  // If we get here, all retries failed
+  throw lastError;
+};
+
+module.exports = mongoose.model('User', UserSchema);

@@ -50,12 +50,10 @@ exports.login = async (req, res) => {
         success: false,
         message: 'Please provide an email and password'
       });
-    }
-
-    console.log(`Attempting to find user with email: ${email}`);
+    }    console.log(`Attempting to find user with email: ${email}`);
     
-    // Check for user
-    const user = await User.findOne({ email }).select('+password');
+    // Check for user - using the new retry method
+    const user = await User.findByEmailWithRetry(email, true);
     if (!user) {
       console.log(`No user found with email: ${email}`);
       return res.status(401).json({
@@ -77,17 +75,27 @@ exports.login = async (req, res) => {
     }
 
     console.log(`Password matched for user: ${email}, generating token...`);
-    
-    // Generate JWT and send response
+      // Generate JWT and send response
     sendTokenResponse(user, 200, res);
   } catch (error) {
     console.error('Login error:', error);
-    // Check if it's a database connection error
-    if (error.name === 'MongooseServerSelectionError') {
-      return res.status(500).json({
+    
+    // Enhanced error handling for MongoDB connection issues
+    if (error.name === 'MongooseServerSelectionError' || 
+        error.message.includes('buffering timed out after') ||
+        error.name === 'MongoTimeoutError') {
+      console.error('MongoDB timeout error details:', JSON.stringify({
+        name: error.name,
+        message: error.message,
+        code: error.code || 'N/A',
+        errmsg: error.errmsg || 'N/A'
+      }));
+      
+      return res.status(503).json({
         success: false,
-        message: 'Database connection error',
-        error: 'Could not connect to the database. Please try again later.'
+        message: 'Database connection timeout',
+        error: 'The database operation timed out. Please try again later.',
+        retryable: true
       });
     }
     
