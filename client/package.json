@@ -26,7 +26,10 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "dev": "react-scripts start",
+    "dev:local": "set NODE_ENV=development&& react-scripts start",
+    "dev:vercel": "copy .env.development.vercel .env.local /y && react-scripts start"
   },
   "eslintConfig": {
     "extends": [

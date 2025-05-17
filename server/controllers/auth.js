@@ -40,37 +40,57 @@ exports.register = async (req, res) => {
 // @access  Public
 exports.login = async (req, res) => {
   try {
+    console.log('Login attempt received');
     const { email, password } = req.body;
 
     // Validate email & password
     if (!email || !password) {
+      console.log('Missing email or password');
       return res.status(400).json({
         success: false,
         message: 'Please provide an email and password'
       });
     }
 
+    console.log(`Attempting to find user with email: ${email}`);
+    
     // Check for user
     const user = await User.findOne({ email }).select('+password');
     if (!user) {
+      console.log(`No user found with email: ${email}`);
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
       });
     }
 
+    console.log(`User found, checking password...`);
+    
     // Check if password matches
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
+      console.log(`Password did not match for user: ${email}`);
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
       });
     }
 
+    console.log(`Password matched for user: ${email}, generating token...`);
+    
     // Generate JWT and send response
     sendTokenResponse(user, 200, res);
   } catch (error) {
+    console.error('Login error:', error);
+    // Check if it's a database connection error
+    if (error.name === 'MongooseServerSelectionError') {
+      return res.status(500).json({
+        success: false,
+        message: 'Database connection error',
+        error: 'Could not connect to the database. Please try again later.'
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Server error',

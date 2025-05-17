@@ -6,12 +6,20 @@ const authRoutes = require('./routes/auth');
 const videoRoutes = require('./routes/videos');
 
 // Load environment variables
-dotenv.config();
+const path = require('path');
+if (process.env.NODE_ENV === 'production') {
+  // In production (Vercel), the environment variables are set through Vercel dashboard
+  console.log('Running in production mode - using Vercel environment variables');
+} else {
+  // In development, load from .env file
+  dotenv.config();
+  console.log('Environment variables loaded from .env file');
+}
 
 // Check for MongoDB URI
 if (!process.env.MONGODB_URI) {
   console.error('MONGODB_URI is required. Set this environment variable.');
-  process.env.MONGODB_URI = 'mongodb+srv://thantenthousand:KhhnM8r1t3aSSM4P@kuppisite1.ao5c8v0.mongodb.net/?retryWrites=true&w=majority&appName=KuppiSite1';
+  // Don't set a default in production code - we'll rely on the environment variable
 }
 
 // Check for JWT env vars
@@ -29,7 +37,7 @@ const app = express();
 // Parse CORS origins from environment variable
 const corsOrigin = process.env.CORS_ORIGIN ? 
   process.env.CORS_ORIGIN.split(',') : 
-  ['http://localhost:3000', 'https://kuppisite-client.vercel.app'];
+  ['http://localhost:3000', 'https://kuppisite-client.vercel.app', 'https://kuppi-site.vercel.app', 'https://kuppisite.vercel.app'];
 
 // CORS configuration
 const corsOptions = {
@@ -40,12 +48,16 @@ const corsOptions = {
     if (corsOrigin.indexOf(origin) !== -1 || corsOrigin.includes('*')) {
       callback(null, true);
     } else {
+      console.log('CORS blocked origin:', origin);
+      console.log('Allowed origins:', corsOrigin);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 };
 
 // Middleware
@@ -56,10 +68,34 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/videos', videoRoutes);
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('Could not connect to MongoDB:', err));
+// Connect to MongoDB with improved error handling
+const connectDB = async () => {
+  try {
+    console.log('Attempting to connect to MongoDB...');
+    const mongoURI = process.env.MONGODB_URI;
+    
+    // Log a masked version of the connection string for debugging
+    const maskedURI = mongoURI?.replace(/(mongodb\+srv:\/\/)[^:]+:[^@]+@/, '$1****:****@') || 'undefined';
+    console.log(`Using MongoDB URI: ${maskedURI}`);
+    
+    await mongoose.connect(mongoURI, {
+      // These options help with MongoDB Atlas connections
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    });
+    
+    console.log('Connected to MongoDB successfully');
+  } catch (err) {
+    console.error('Failed to connect to MongoDB:', err.message);
+    // In serverless environments, we don't want to exit the process
+    if (process.env.NODE_ENV !== 'production') {
+      process.exit(1);
+    }
+  }
+};
+
+// Connect to the database
+connectDB();
 
 // Vercel serverless function export
 if (process.env.NODE_ENV === 'production') {

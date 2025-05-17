@@ -67,9 +67,12 @@ After deploying the client, you need to update the server's CORS settings:
 
 1. Go to your server project in Vercel Dashboard
 2. Go to "Settings" > "Environment Variables"
-3. Add or update `CORS_ORIGIN` with your client's domain (e.g., `https://kuppisite-client.vercel.app`)
+3. Add or update `CORS_ORIGIN` with your client's domain
+   - **Important**: Add both the client and server URLs to handle potential cross-origin issues
+   - Include the domain with and without hyphens if your URLs have different formats
+   - Example value: `https://kuppi-site.vercel.app,https://kuppisite.vercel.app`
 4. Click "Save"
-5. Redeploy the server project
+5. Redeploy the server project by going to "Deployments" and clicking "Redeploy" on the latest deployment
 
 ## Testing the Deployment
 
@@ -83,15 +86,29 @@ After deploying the client, you need to update the server's CORS settings:
 ### CORS Issues
 - Check browser console for CORS errors
 - Verify the `CORS_ORIGIN` in server settings includes your client domain
-- Make sure server URLs in client use the correct format
+  - If your client domain has a hyphen (e.g., `kuppi-site`) but server domain doesn't (e.g., `kuppisite`), make sure both variations are included in CORS_ORIGIN
+  - Example: `https://kuppi-site.vercel.app,https://kuppisite.vercel.app`
+- The error "Access to XMLHttpRequest has been blocked by CORS policy" indicates that your client's domain isn't in the server's allowed origins list
+- Make sure server URLs in client use the correct format and include `/api` path
+- After updating CORS settings, redeploy the server for changes to take effect
+
+### Environment Variable Issues
+- For the client, ensure `REACT_APP_SERVER_URL` is set properly in Vercel environment variables
+- For the server, check that `MONGODB_URI`, `JWT_SECRET`, and `CORS_ORIGIN` are properly set
+- If using environment variables in Vercel, enter them as plain text (don't use the @ symbol or reference secrets)
+- Environment variables are injected at build time, so you must redeploy after changing them
 
 ### Authentication Issues
 - JWT_SECRET might be invalid or missing
 - Check that token is being properly sent in the Authorization header
+- Try clearing browser localStorage if you're seeing persistent auth errors
+- Check browser console for authentication-related errors
 
 ### Database Connection Issues
 - Verify MongoDB URI is correct
 - Check MongoDB Atlas settings to ensure connections are allowed from Vercel's IPs
+- If using MongoDB Atlas, make sure your IP whitelist includes `0.0.0.0/0` for Vercel
+- Test database connection by adding a console log in the server code
 
 ## Continuous Deployment
 

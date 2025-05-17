@@ -6,7 +6,10 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:mongodb": "node test-mongodb-connection.js",
+    "test:vercel": "node test-vercel-deployment.js",
+    "deploy": "vercel deploy --prod"
   },
   "keywords": [
     "youtube",
