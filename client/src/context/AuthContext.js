@@ -100,7 +100,10 @@ export const AuthProvider = ({ children }) => {
       console.log('Attempting login with email:', email);
       console.log('Making login request to:', AUTH_ENDPOINTS.LOGIN);
       
-      const res = await axios.post(AUTH_ENDPOINTS.LOGIN, { email, password });
+      // Add timeout to avoid hanging forever
+      const res = await axios.post(AUTH_ENDPOINTS.LOGIN, { email, password }, {
+        timeout: 10000 // 10 second timeout
+      });
       
       console.log('Login successful');
       const { token: newToken, user: userInfo } = res.data;
@@ -117,9 +120,35 @@ export const AuthProvider = ({ children }) => {
       
       return { success: true };
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid credentials');
+      console.error('Login error details:', err);
+      
+      let errorMessage = 'Login failed';
+      
+      if (err.response) {
+        // The server responded with an error status
+        console.error('Error status:', err.response.status);
+        console.error('Error data:', err.response.data);
+        
+        if (err.response.status === 500) {
+          errorMessage = 'Server error. Database connection issue. Please try again later.';
+        } else if (err.response.status === 401) {
+          errorMessage = 'Invalid credentials. Please check your email and password.';
+        } else {
+          errorMessage = err.response.data?.message || 'Login failed';
+        }
+      } else if (err.request) {
+        // The request was made but no response was received
+        console.error('No response received from server');
+        errorMessage = 'Unable to connect to the server. Please check your internet connection.';
+      } else {
+        // Something happened in setting up the request
+        console.error('Error setting up request:', err.message);
+        errorMessage = 'An error occurred while trying to log in.';
+      }
+      
+      setError(errorMessage);
       setLoading(false);
-      return { success: false, error: err.response?.data?.message || 'Invalid credentials' };
+      return { success: false, error: errorMessage };
     }
   };
 

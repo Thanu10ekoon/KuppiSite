@@ -9,6 +9,9 @@ import axios from 'axios';
 // Base API URL
 export const API_BASE_URL = process.env.REACT_APP_SERVER_URL || 'http://localhost:5000/api';
 
+// Log the API URL for debugging purposes
+console.log('API Base URL:', API_BASE_URL);
+
 // Auth endpoints
 export const AUTH_ENDPOINTS = {
   LOGIN: `${API_BASE_URL}/auth/login`,

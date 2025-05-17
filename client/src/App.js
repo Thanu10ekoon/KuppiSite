@@ -15,6 +15,7 @@ import VideoDetail from './pages/VideoDetail';
 import Admin from './pages/Admin';
 import AddVideo from './pages/AddVideo';
 import EditVideo from './pages/EditVideo';
+import Debug from './pages/Debug'; // Import Debug page
 
 // Add Bootstrap CSS
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -30,6 +31,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/debug" element={<Debug />} />
               
               
               {/* Protected routes */}
