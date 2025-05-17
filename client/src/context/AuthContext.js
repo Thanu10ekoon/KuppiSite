@@ -99,10 +99,9 @@ export const AuthProvider = ({ children }) => {
       
       console.log('Attempting login with email:', email);
       console.log('Making login request to:', AUTH_ENDPOINTS.LOGIN);
-      
-      // Add timeout to avoid hanging forever
+        // Add timeout to avoid hanging forever
       const res = await axios.post(AUTH_ENDPOINTS.LOGIN, { email, password }, {
-        timeout: 10000 // 10 second timeout
+        timeout: 30000 // Increased from 10s to 30s to accommodate potential MongoDB operations timeout
       });
       
       console.log('Login successful');
@@ -122,15 +121,21 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       console.error('Login error details:', err);
       
-      let errorMessage = 'Login failed';
-      
+      let errorMessage = 'Login failed';      
       if (err.response) {
         // The server responded with an error status
         console.error('Error status:', err.response.status);
         console.error('Error data:', err.response.data);
         
-        if (err.response.status === 500) {
-          errorMessage = 'Server error. Database connection issue. Please try again later.';
+        if (err.response.status === 503) {
+          errorMessage = 'Database operation timed out. This usually happens when the database is under heavy load or reconnecting. Please wait a moment and try again.';
+          
+          // If the server indicates it's a retriable error, we'll tell the user
+          if (err.response.data?.retryable) {
+            errorMessage += ' (This is a temporary issue, please retry in a few seconds)';
+          }
+        } else if (err.response.status === 500) {
+          errorMessage = 'Server error. There may be a database connection issue. Please try again later.';
         } else if (err.response.status === 401) {
           errorMessage = 'Invalid credentials. Please check your email and password.';
         } else {

@@ -64,12 +64,16 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
+// Import DB status route
+const dbStatusRoute = require('./routes/db-status');
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/videos', videoRoutes);
+app.use('/api/db', dbStatusRoute);
 
 // Connect to MongoDB with improved error handling
-const connectDB = async () => {
+const connectDB = async (retryCount = 0, maxRetries = 3) => {
   try {
     console.log('Attempting to connect to MongoDB...');
     const mongoURI = process.env.MONGODB_URI;
@@ -79,17 +83,66 @@ const connectDB = async () => {
     console.log(`Using MongoDB URI: ${maskedURI}`);
     
     await mongoose.connect(mongoURI, {
-      // These options help with MongoDB Atlas connections
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
+      // Enhanced options for MongoDB Atlas connections, especially for free tier
+      serverSelectionTimeoutMS: 30000, // Increased from 5000ms to 30000ms
+      socketTimeoutMS: 60000, // Increased from 45000ms to 60000ms
+      connectTimeoutMS: 30000, // Added connection timeout
+      heartbeatFrequencyMS: 10000, // Added regular heartbeat checks
+      retryWrites: true, // Enable retry for write operations
+      retryReads: true, // Enable retry for read operations
+      w: 'majority', // Write concern for data durability
+      maxPoolSize: 10, // Control connection pool size
+      minPoolSize: 1 // Maintain at least one connection
     });
     
     console.log('Connected to MongoDB successfully');
+    
+    // Listen for connection errors after initial connection
+    mongoose.connection.on('error', err => {
+      console.error('MongoDB connection error:', err);
+      // Attempt to reconnect if not in the process of disconnecting
+      if (mongoose.connection.readyState !== 0) {
+        console.log('Attempting to reconnect to MongoDB...');
+        mongoose.connect(mongoURI).catch(err => {
+          console.error('Failed to reconnect to MongoDB:', err.message);
+        });
+      }
+    });
+    
+    // Listen for disconnection
+    mongoose.connection.on('disconnected', () => {
+      console.log('MongoDB disconnected');
+    });
+    
+    // Handle process termination
+    process.on('SIGINT', async () => {
+      try {
+        await mongoose.connection.close();
+        console.log('MongoDB connection closed due to app termination');
+        process.exit(0);
+      } catch (err) {
+        console.error('Error during MongoDB connection close:', err);
+        process.exit(1);
+      }
+    });
+    
   } catch (err) {
     console.error('Failed to connect to MongoDB:', err.message);
-    // In serverless environments, we don't want to exit the process
-    if (process.env.NODE_ENV !== 'production') {
-      process.exit(1);
+    
+    // Retry logic
+    if (retryCount < maxRetries) {
+      const retryDelay = Math.pow(2, retryCount) * 1000; // Exponential backoff
+      console.log(`Retrying in ${retryDelay}ms... (Attempt ${retryCount + 1}/${maxRetries})`);
+      
+      setTimeout(() => {
+        connectDB(retryCount + 1, maxRetries);
+      }, retryDelay);
+    } else {
+      console.error(`Failed to connect after ${maxRetries} attempts.`);
+      // In serverless environments, we don't want to exit the process
+      if (process.env.NODE_ENV !== 'production') {
+        process.exit(1);
+      }
     }
   }
 };

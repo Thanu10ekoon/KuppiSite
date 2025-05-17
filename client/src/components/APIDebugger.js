@@ -10,6 +10,7 @@ const APIDebugger = () => {
   const [logs, setLogs] = useState([]);
   const [status, setStatus] = useState('idle');
   const [serverURL, setServerURL] = useState('');
+
   // Add log entry with timestamp
   const addLog = (message, type = 'info') => {
     const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
@@ -17,7 +18,7 @@ const APIDebugger = () => {
   };
 
   // Test API connectivity
-  const testConnection = useCallback(async () => {
+  const testConnection = async () => {
     setStatus('testing');
     addLog('Starting API connection test...', 'info');
     
@@ -53,16 +54,33 @@ const APIDebugger = () => {
         addLog(`CORS Preflight error: ${error.message}`, 'error');
       }
       
-      // Test actual endpoint
+      // Test basic API endpoint
       addLog('Testing API endpoint...', 'info');
       const response = await axios.get(`${API_BASE_URL}/auth/test-connection`);
       
       if (response.status === 200) {
-        addLog(`Server response: ${JSON.stringify(response.data)}`, 'success');
-        setStatus('success');
+        addLog(`Server connection successful: ${JSON.stringify(response.data)}`, 'success');
       } else {
         addLog(`Unexpected status: ${response.status}`, 'warning');
-        setStatus('warning');
+      }
+      
+      // Test database status endpoint
+      addLog('Testing database connection...', 'info');
+      try {
+        const dbResponse = await axios.get(`${API_BASE_URL}/db/status`);
+        if (dbResponse.status === 200 && dbResponse.data.success) {
+          addLog(`Database connection successful: ${JSON.stringify(dbResponse.data.status)}`, 'success');
+          setStatus('success');
+        } else {
+          addLog(`Database not connected: ${JSON.stringify(dbResponse.data)}`, 'warning');
+          setStatus('warning');
+        }
+      } catch (dbError) {
+        addLog(`Database status check failed: ${dbError.message}`, 'error');
+        if (dbError.response) {
+          addLog(`DB Status response: ${JSON.stringify(dbError.response.data)}`, 'error');
+        }
+        setStatus('error');
       }
     } catch (error) {
       addLog(`Error: ${error.message}`, 'error');
@@ -83,7 +101,9 @@ const APIDebugger = () => {
       
       setStatus('error');
     }
-  };  // Auto-test on mount
+  };
+
+  // Auto-test on mount
   useEffect(() => {
     setServerURL(API_BASE_URL);
     testConnection();
@@ -99,102 +119,47 @@ const APIDebugger = () => {
         <span>Status: {status.toUpperCase()}</span>
       </div>
       
-      <div className="server-info">
+      <div className="server-info mb-3">
         <strong>Server URL:</strong> {serverURL}
-        <button onClick={testConnection} disabled={status === 'testing'}>
-          {status === 'testing' ? 'Testing...' : 'Test Connection'}
+        <br />
+        <strong>Environment:</strong> {process.env.NODE_ENV || 'Not set'}
+      </div>
+      
+      <div className="actions">
+        <button
+          className="btn btn-primary mb-3"
+          onClick={testConnection}
+          disabled={status === 'testing'}
+        >
+          Test Connection
         </button>
       </div>
       
       <div className="logs">
         <h3>Connection Logs</h3>
-        <div className="log-entries">
-          {logs.map((log, index) => (
-            <div key={index} className={`log-entry ${log.type}`}>
-              <span className="timestamp">[{log.timestamp}]</span>
-              <span className="message">{log.message}</span>
-            </div>
-          ))}
+        <div className="log-entries p-3 border rounded bg-light">
+          {logs.length === 0 ? (
+            <p className="text-muted">No logs yet. Click "Test Connection" to begin testing.</p>
+          ) : (
+            logs.map((log, index) => (
+              <div key={index} className={`log-entry ${log.type}`}>
+                <span className="timestamp">[{log.timestamp}]</span>
+                <span className="message">{log.message}</span>
+              </div>
+            ))
+          )}
         </div>
       </div>
       
-      <style jsx>{`
-        .api-debugger {
-          padding: 20px;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          background-color: #f9f9f9;
-          max-width: 800px;
-          margin: 0 auto;
-        }
-        
-        .status-panel {
-          display: flex;
-          align-items: center;
-          margin-bottom: 15px;
-        }
-        
-        .status-indicator {
-          width: 12px;
-          height: 12px;
-          border-radius: 50%;
-          margin-right: 8px;
-        }
-        
-        .status-indicator.idle { background-color: #999; }
-        .status-indicator.testing { background-color: #f5a623; }
-        .status-indicator.success { background-color: #4caf50; }
-        .status-indicator.error { background-color: #f44336; }
-        .status-indicator.warning { background-color: #ff9800; }
-        
-        .server-info {
-          margin-bottom: 20px;
-        }
-        
-        .logs {
-          background-color: #fff;
-          border: 1px solid #ddd;
-          border-radius: 3px;
-          padding: 10px;
-          max-height: 400px;
-          overflow-y: auto;
-        }
-        
-        .log-entries {
-          font-family: monospace;
-          font-size: 12px;
-        }
-        
-        .log-entry {
-          padding: 3px 0;
-          border-bottom: 1px solid #f0f0f0;
-        }
-        
-        .log-entry.info .message { color: #333; }
-        .log-entry.success .message { color: #4caf50; }
-        .log-entry.error .message { color: #f44336; }
-        .log-entry.warning .message { color: #ff9800; }
-        
-        .timestamp {
-          color: #888;
-          margin-right: 8px;
-        }
-        
-        button {
-          margin-left: 10px;
-          padding: 5px 10px;
-          background-color: #4285f4;
-          color: white;
-          border: none;
-          border-radius: 3px;
-          cursor: pointer;
-        }
-        
-        button:disabled {
-          background-color: #ccc;
-          cursor: not-allowed;
-        }
-      `}</style>
+      <div className="troubleshooting mt-4">
+        <h3>Troubleshooting Tips</h3>
+        <ul>
+          <li>If you see CORS errors, check that your server has the correct CORS configuration</li>
+          <li>If connection fails, verify your API URL is correct in the .env file</li>
+          <li>For network errors, ensure your server is running and accessible</li>
+          <li>Check browser console (F12) for additional error details</li>
+        </ul>
+      </div>
     </div>
   );
 };
