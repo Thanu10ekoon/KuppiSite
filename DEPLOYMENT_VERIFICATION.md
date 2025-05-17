@@ -1,6 +1,8 @@
 # Vercel Deployment Verification Guide
 
-After dep2. **Check API URL in Client**:
+After dep22. **Check API URL in Client**:
+   - Verify that `REACT_APP_SERVER_URL` is set correctly in the client
+   - Should be: `https://kuppisite-server.vercel.app/api` (note the `/api` at the end)*Check API URL in Client**:
    - Verify that `REACT_APP_SERVER_URL` is set correctly in the clientying both the server and client to Vercel, follow these steps to verify everything is working correctly.
 
 ## 1. Server Verification

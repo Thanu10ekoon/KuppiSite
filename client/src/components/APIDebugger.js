@@ -10,7 +10,6 @@ const APIDebugger = () => {
   const [logs, setLogs] = useState([]);
   const [status, setStatus] = useState('idle');
   const [serverURL, setServerURL] = useState('');
-
   // Add log entry with timestamp
   const addLog = (message, type = 'info') => {
     const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
@@ -18,7 +17,7 @@ const APIDebugger = () => {
   };
 
   // Test API connectivity
-  const testConnection = async () => {
+  const testConnection = useCallback(async () => {
     setStatus('testing');
     addLog('Starting API connection test...', 'info');
     
@@ -84,12 +83,11 @@ const APIDebugger = () => {
       
       setStatus('error');
     }
-  };
-
-  // Auto-test on mount
+  };  // Auto-test on mount
   useEffect(() => {
     setServerURL(API_BASE_URL);
     testConnection();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
