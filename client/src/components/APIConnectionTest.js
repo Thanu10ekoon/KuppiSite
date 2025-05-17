@@ -16,13 +16,11 @@ const APIConnectionTest = () => {
     password: ''
   });
   const [isRunningTest, setIsRunningTest] = useState(false);
-
   // Add log entry with timestamp
   const addLog = (message, type = 'info') => {
     const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
     setLogs(prev => [...prev, { message, timestamp, type }]);
   };
-
   // Basic connectivity test
   const testBasicConnectivity = async () => {
     setIsRunningTest(true);
@@ -102,11 +100,10 @@ const APIConnectionTest = () => {
       ...testCredentials,
       [e.target.name]: e.target.value
     });
-  };
-
-  // Run basic test on mount
+  };  // Run basic test on mount
   useEffect(() => {
     testBasicConnectivity();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
